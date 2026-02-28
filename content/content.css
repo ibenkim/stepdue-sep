@@ -1,4 +1,4 @@
-#epoch-bar-host {
+#stepdue-bar-host {
   all: initial !important;
   position: fixed !important;
   top: 0 !important;
@@ -10,6 +10,6 @@
   display: none !important;
 }
 
-#epoch-bar-host.epoch-active {
+#stepdue-bar-host.stepdue-active {
   display: block !important;
 }

@@ -20,7 +20,7 @@ const DEFAULT_CLASSIFICATIONS = {
 let sessionData = { startTime: null, segments: [] };
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('epoch loaded');
+  console.log('stepdue loaded');
 
   chrome.storage.local.set({
     sessions: [],
@@ -153,7 +153,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
 
 // 1-second tick for live updates (fisheye weights shift over time)
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'epoch-tick') {
+  if (alarm.name === 'stepdue-tick') {
     broadcastBarData();
   }
 });
@@ -192,7 +192,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         startTime: now,
         segments: [{ color, domain, start: now, end: null }]
       };
-      chrome.alarms.create('epoch-tick', { periodInMinutes: 1 / 60 });
+      chrome.alarms.create('stepdue-tick', { periodInMinutes: 1 / 60 });
       broadcastBarData();
       sendResponse({ lockedIn: true });
     });
@@ -205,7 +205,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       if (!last.end) last.end = Date.now();
     }
 
-    chrome.alarms.clear('epoch-tick');
+    chrome.alarms.clear('stepdue-tick');
     sessionData = { startTime: null, segments: [] };
 
     chrome.storage.local.set({ lockedIn: false }).then(() => {

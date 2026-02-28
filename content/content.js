@@ -110,7 +110,7 @@
 
   // DOM setup
   const host = document.createElement('div');
-  host.id = 'epoch-bar-host';
+  host.id = 'stepdue-bar-host';
   const shadow = host.attachShadow({ mode: 'closed' });
 
   const style = document.createElement('style');
@@ -125,16 +125,16 @@
       display: none;
     }
 
-    :host(.epoch-active) {
+    :host(.stepdue-active) {
       display: block;
     }
 
-    #epoch-wrapper {
+    #stepdue-wrapper {
       position: relative;
       width: 100%;
     }
 
-    #epoch-bar {
+    #stepdue-bar {
       display: flex;
       width: 100%;
       height: 6px;
@@ -156,7 +156,7 @@
       border-left: 0.5px solid rgba(0, 0, 0, 0.08);
     }
 
-    #epoch-markers {
+    #stepdue-markers {
       position: absolute;
       top: 0;
       left: 0;
@@ -197,7 +197,7 @@
     }
 
     @media (prefers-color-scheme: dark) {
-      #epoch-bar {
+      #stepdue-bar {
         background: rgba(0, 0, 0, 0.2);
         box-shadow:
           inset 0 1px 0 rgba(255, 255, 255, 0.08),
@@ -213,13 +213,13 @@
   `;
 
   const wrapper = document.createElement('div');
-  wrapper.id = 'epoch-wrapper';
+  wrapper.id = 'stepdue-wrapper';
 
   const bar = document.createElement('div');
-  bar.id = 'epoch-bar';
+  bar.id = 'stepdue-bar';
 
   const markersEl = document.createElement('div');
-  markersEl.id = 'epoch-markers';
+  markersEl.id = 'stepdue-markers';
 
   // Pre-create marker elements
   const markerEls = MARKER_THRESHOLDS.map(({ label }) => {
@@ -254,8 +254,8 @@
     markersEl.style.display = 'none';
   });
 
-  function showBar() { host.classList.add('epoch-active'); }
-  function hideBar()  { host.classList.remove('epoch-active'); }
+  function showBar() { host.classList.add('stepdue-active'); }
+  function hideBar()  { host.classList.remove('stepdue-active'); }
 
   function renderBar(data) {
     if (!data || !data.segments || data.segments.length === 0) {
