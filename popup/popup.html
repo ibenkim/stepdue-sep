@@ -9,11 +9,98 @@
 <body>
   <header>
     <span class="wordmark">epoch</span>
-    <span class="version">v0.1</span>
+    <span class="version">v0.2</span>
   </header>
-  <main>
-    <p class="status">Ready.</p>
-  </main>
+
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="session">Session</button>
+    <button class="tab-btn" data-tab="sites">Sites</button>
+    <button class="tab-btn" data-tab="analytics">Analytics</button>
+  </nav>
+
+  <!-- Tab 1: Session -->
+  <div class="tab-panel active" id="tab-session">
+    <div class="session-panel">
+      <button id="lock-btn" class="lock-btn">Lock In</button>
+      <p class="status" id="status-text">Not in session</p>
+    </div>
+    <div class="section-header-sm">
+      <span class="section-title-sm">Time per site</span>
+    </div>
+    <div class="site-chart" id="site-chart">
+      <div class="no-data">Start a session to see analytics.</div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Sites -->
+  <div class="tab-panel" id="tab-sites">
+    <div class="current-domain-strip">
+      <div class="current-domain-dot" id="current-domain-dot"></div>
+      <span class="current-domain-label" id="current-domain-label">No active tab</span>
+    </div>
+
+    <div class="domain-category" id="category-red">
+      <div class="category-header" data-category="red">
+        <div class="color-dot red"></div>
+        <span class="category-name">Distractions</span>
+        <span class="domain-count" id="count-red">0</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="domain-list" id="list-red"></div>
+    </div>
+
+    <div class="domain-category" id="category-green">
+      <div class="category-header" data-category="green">
+        <div class="color-dot green"></div>
+        <span class="category-name">On-Task</span>
+        <span class="domain-count" id="count-green">0</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="domain-list" id="list-green"></div>
+    </div>
+
+    <div class="domain-category" id="category-yellow">
+      <div class="category-header" data-category="yellow">
+        <div class="color-dot yellow"></div>
+        <span class="category-name">Utility</span>
+        <span class="domain-count" id="count-yellow">0</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="domain-list" id="list-yellow"></div>
+    </div>
+
+    <div class="add-domain">
+      <input type="text" id="domain-input" placeholder="domain.com">
+      <select id="color-select">
+        <option value="red">Distraction</option>
+        <option value="green">On-Task</option>
+        <option value="yellow">Utility</option>
+      </select>
+      <button id="add-btn">+</button>
+    </div>
+  </div>
+
+  <!-- Tab 3: Analytics -->
+  <div class="tab-panel" id="tab-analytics">
+    <div class="analytics-strip">
+      <div class="strip-item">
+        <span class="strip-label">Started</span>
+        <span class="strip-value" id="analytics-start">—</span>
+      </div>
+      <div class="strip-item">
+        <span class="strip-label">Duration</span>
+        <span class="strip-value" id="analytics-duration">—</span>
+      </div>
+    </div>
+
+    <div class="section-header-sm">
+      <span class="section-title-sm">Activity</span>
+    </div>
+    <div class="timeline" id="timeline">
+      <div class="no-data">No activity yet.</div>
+    </div>
+  </div>
+
   <script src="popup.js"></script>
 </body>
 </html>

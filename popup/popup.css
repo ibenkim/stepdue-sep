@@ -4,38 +4,485 @@
   padding: 0;
 }
 
+html, body {
+  height: 100%;
+}
+
 body {
-  width: 300px;
+  width: 100%;
+  max-width: 400px;
+  min-height: 500px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 14px;
   color: #1a1a1a;
-  background: #fff;
+  background: #EFEFF8;
+  display: flex;
+  flex-direction: column;
 }
+
+/* ─── Header ─── */
 
 header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding: 16px 16px 12px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 14px 16px 10px;
+  background: #fff;
+  border-bottom: 1px solid rgba(89, 90, 150, 0.12);
+  flex-shrink: 0;
 }
 
 .wordmark {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.5px;
+  color: #595A96;
 }
 
 .version {
   font-size: 11px;
-  color: #999;
+  color: #B5A0CE;
 }
 
-main {
-  padding: 16px;
+/* ─── Tab Navigation ─── */
+
+.tab-nav {
+  display: flex;
+  background: #fff;
+  border-bottom: 1px solid rgba(89, 90, 150, 0.12);
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 9px 4px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: #B5A0CE;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  letter-spacing: 0.1px;
+}
+
+.tab-btn:hover {
+  color: #595A96;
+}
+
+.tab-btn.active {
+  color: #595A96;
+  font-weight: 600;
+  border-bottom-color: #595A96;
+}
+
+/* ─── Tab Panels ─── */
+
+.tab-panel {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.tab-panel.active {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Session Tab ─── */
+
+.session-panel {
+  padding: 20px 16px;
+}
+
+.lock-btn {
+  width: 100%;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: #595A96;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  letter-spacing: -0.3px;
+}
+
+.lock-btn:hover {
+  background: #4a4b80;
+}
+
+.lock-btn.active {
+  background: #B5A0CE;
+}
+
+.lock-btn.active:hover {
+  background: #9e8eba;
 }
 
 .status {
-  color: #555;
+  color: #8880a8;
+  font-size: 11px;
+  text-align: center;
+  margin-top: 10px;
   line-height: 1.5;
+}
+
+/* ─── Shared Color Dots ─── */
+
+.color-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.color-dot.red    { background: #595A96; }
+.color-dot.green  { background: #A4A5C7; }
+.color-dot.yellow { background: #D2C8E3; }
+.color-dot.gray   { background: #B5A0CE; }
+
+/* ─── Sites Tab — Current Domain Strip ─── */
+
+.current-domain-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid rgba(89, 90, 150, 0.10);
+  flex-shrink: 0;
+  margin-bottom: 12px;
+}
+
+.current-domain-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #B5A0CE;
+  flex-shrink: 0;
+}
+
+.current-domain-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* ─── Sites Tab — Category Sections ─── */
+
+.domain-category {
+  background: #fff;
+  margin: 0;
+  border-radius: 0;
+  overflow: hidden;
+  border-top: 1px solid rgba(89, 90, 150, 0.08);
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.category-header:hover {
+  background: rgba(89, 90, 150, 0.04);
+}
+
+.category-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+.domain-count {
+  font-size: 11px;
+  color: #B5A0CE;
+  font-weight: 500;
+  margin-right: 2px;
+}
+
+.chevron {
+  font-size: 12px;
+  color: #B5A0CE;
+  transition: transform 0.15s;
+  line-height: 1;
+}
+
+.domain-category.collapsed .chevron {
+  transform: rotate(-90deg);
+}
+
+.domain-list {
+  border-top: 1px solid rgba(89, 90, 150, 0.08);
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.domain-category.collapsed .domain-list {
+  display: none;
+}
+
+.domain-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px 10px 29px;
+  gap: 10px;
+  border-bottom: 1px solid rgba(89, 90, 150, 0.06);
+}
+
+.domain-item:last-child {
+  border-bottom: none;
+}
+
+.domain-item-name {
+  flex: 1;
+  font-size: 12px;
+  color: #444;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.domain-remove-btn {
+  border: none;
+  background: none;
+  color: #B5A0CE;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+  line-height: 1;
+  opacity: 0.6;
+  transition: opacity 0.15s, color 0.15s;
+  font-family: inherit;
+}
+
+.domain-remove-btn:hover {
+  opacity: 1;
+  color: #595A96;
+}
+
+/* ─── Sites Tab — Add Domain ─── */
+
+.add-domain {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 10px 16px;
+  background: #fff;
+  border-top: 1px solid rgba(89, 90, 150, 0.08);
+}
+
+.add-domain input {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid rgba(89, 90, 150, 0.20);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  background: #EFEFF8;
+  color: #333;
+  outline: none;
+  min-width: 0;
+}
+
+.add-domain input:focus {
+  border-color: #595A96;
+}
+
+.add-domain select {
+  padding: 5px 4px;
+  border: 1px solid rgba(89, 90, 150, 0.20);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  background: #EFEFF8;
+  color: #333;
+  outline: none;
+}
+
+.add-domain button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 6px;
+  background: #595A96;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: inherit;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.add-domain button:hover {
+  background: #4a4b80;
+}
+
+/* ─── Analytics Tab — Session Strip ─── */
+
+.analytics-strip {
+  display: flex;
+  background: #fff;
+  border-bottom: 1px solid rgba(89, 90, 150, 0.10);
+  flex-shrink: 0;
+}
+
+.strip-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  gap: 2px;
+}
+
+.strip-item + .strip-item {
+  border-left: 1px solid rgba(89, 90, 150, 0.10);
+}
+
+.strip-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #B5A0CE;
+}
+
+.strip-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #595A96;
+}
+
+/* ─── Analytics Tab — Section Headers ─── */
+
+.section-header-sm {
+  padding: 12px 16px 4px;
+  flex-shrink: 0;
+}
+
+.section-title-sm {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #B5A0CE;
+}
+
+/* ─── Analytics Tab — Site Chart ─── */
+
+.site-chart {
+  padding: 4px 12px 8px;
+}
+
+.chart-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.chart-domain {
+  width: 90px;
+  font-size: 11px;
+  color: #444;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.chart-bar-wrap {
+  flex: 1;
+  height: 10px;
+  background: rgba(89, 90, 150, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.chart-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.chart-time {
+  width: 52px;
+  font-size: 11px;
+  color: #888;
+  text-align: right;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Analytics Tab — Timeline ─── */
+
+.timeline {
+  padding: 0 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.timeline-entry {
+  display: grid;
+  grid-template-columns: 54px 12px 1fr auto;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 8px;
+  background: #fff;
+  border-radius: 6px;
+}
+
+.timeline-ts {
+  font-size: 10px;
+  color: #999;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.timeline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.timeline-domain {
+  font-size: 12px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-dur {
+  font-size: 11px;
+  color: #999;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Shared ─── */
+
+.no-data {
+  padding: 20px;
+  text-align: center;
+  color: #B5A0CE;
+  font-size: 12px;
 }

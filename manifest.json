@@ -1,15 +1,25 @@
 {
   "manifest_version": 3,
   "name": "epoch",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Browser-native accountability mirror for students.",
-  "permissions": ["tabs", "storage"],
+  "permissions": ["tabs", "storage", "alarms", "sidePanel"],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_popup": "popup/popup.html",
     "default_title": "epoch",
     "default_icon": "icon.png"
-  }
+  },
+  "side_panel": {
+    "default_path": "popup/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_start"
+    }
+  ]
 }
