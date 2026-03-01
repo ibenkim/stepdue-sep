@@ -4,6 +4,10 @@
   "version": "0.2.0",
   "description": "Browser-native accountability mirror for students.",
   "permissions": ["tabs", "storage", "alarms", "sidePanel"],
+  "host_permissions": [
+    "https://*.azurewebsites.net/*",
+    "https://*.azurestaticapps.net/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },

@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Insights — stepdue</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #EFEFF8;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    .container { max-width: 680px; margin: 0 auto; }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .wordmark { font-size: 20px; font-weight: 700; color: #595A96; letter-spacing: -0.5px; }
+    .back-link { font-size: 13px; color: #B5A0CE; text-decoration: none; }
+    .back-link:hover { color: #595A96; }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid rgba(89, 90, 150, 0.12);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #B5A0CE;
+      margin-bottom: 12px;
+    }
+
+    /* Stat grid — 5 columns for overview row */
+    .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+    @media (max-width: 520px) { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
+    .stat-item { display: flex; flex-direction: column; gap: 2px; }
+    .stat-label { font-size: 11px; color: #B5A0CE; line-height: 1.3; }
+    .stat-value { font-size: 18px; font-weight: 700; color: #595A96; }
+
+    /* Category stacked bar */
+    .category-bar {
+      display: flex;
+      height: 10px;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .bar-segment { height: 100%; }
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Vertical bar chart (focus trend, time-of-day, day-of-week) */
+    .vchart {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 80px;
+      margin-bottom: 6px;
+    }
+    .vbar-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+      gap: 4px;
+      min-width: 0;
+    }
+    .vbar {
+      width: 100%;
+      border-radius: 3px 3px 0 0;
+      min-height: 2px;
+      transition: opacity 0.15s;
+    }
+    .vbar:hover { opacity: 0.75; }
+    .vbar-label {
+      font-size: 9px;
+      color: #B5A0CE;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      text-align: center;
+    }
+    .vchart-axis {
+      display: flex;
+      gap: 3px;
+    }
+
+    /* Horizontal bar chart (top sites) */
+    .domain-row {
+      display: grid;
+      grid-template-columns: 1fr 120px 60px;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(89, 90, 150, 0.08);
+    }
+    .domain-row:last-child { border-bottom: none; }
+    .domain-name {
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+    }
+    .domain-name span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .domain-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .bar-wrap { background: rgba(89, 90, 150, 0.08); border-radius: 4px; overflow: hidden; height: 6px; }
+    .bar-fill { height: 100%; border-radius: 4px; }
+    .domain-time { font-size: 12px; color: #777; text-align: right; }
+
+    /* Distraction timing bars */
+    .timing-row {
+      display: grid;
+      grid-template-columns: 60px 1fr 50px;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 0;
+    }
+    .timing-label { font-size: 12px; color: #555; }
+    .timing-time { font-size: 12px; color: #B5A0CE; text-align: right; }
+
+    /* Skeleton loader */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(89,90,150,0.08) 25%, rgba(89,90,150,0.15) 50%, rgba(89,90,150,0.08) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 4px;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .skeleton-line { height: 12px; margin: 8px 0; }
+    .skeleton-bar { height: 80px; margin: 4px 0; }
+
+    .no-data { color: #B5A0CE; font-size: 13px; text-align: center; padding: 16px 0; }
+    .error { color: #c0392b; font-size: 13px; padding: 8px 0; }
+
+    /* Two-column sub-grid inside a card */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 460px) { .two-col { grid-template-columns: 1fr; } }
+
+    .insight-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(89, 90, 150, 0.08);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: #595A96;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="wordmark">stepdue</span>
+      <a id="back-link" class="back-link" href="overview.html">← All Sessions</a>
+    </header>
+
+    <!-- 1. Overview Stats -->
+    <div class="card">
+      <div class="card-title">All-Time Summary</div>
+      <div class="stat-grid">
+        <div class="stat-item">
+          <span class="stat-label">Sessions</span>
+          <span class="stat-value" id="stat-sessions">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Total Focus Time</span>
+          <span class="stat-value" id="stat-focus">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Avg Session</span>
+          <span class="stat-value" id="stat-avg">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Avg Focus Score</span>
+          <span class="stat-value" id="stat-score">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Distraction Time</span>
+          <span class="stat-value" id="stat-distraction">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Focus Score Trend -->
+    <div class="card">
+      <div class="card-title">Focus Score Over Time</div>
+      <div class="vchart" id="trend-chart"></div>
+      <div class="vchart-axis" id="trend-axis"></div>
+    </div>
+
+    <!-- 3. Category Breakdown -->
+    <div class="card">
+      <div class="card-title">Time Distribution (All Sessions)</div>
+      <div class="category-bar" id="category-bar"></div>
+      <div class="legend" id="category-legend"></div>
+    </div>
+
+    <!-- 4 & 5. Time of Day + Day of Week -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Best Time of Day</div>
+        <div class="vchart" id="hour-chart"></div>
+        <div class="vchart-axis" id="hour-axis"></div>
+        <div id="hour-insight"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Day of Week</div>
+        <div class="vchart" id="dow-chart"></div>
+        <div class="vchart-axis" id="dow-axis"></div>
+        <div id="dow-insight"></div>
+      </div>
+    </div>
+
+    <!-- 6. Top Distractor Sites (async) -->
+    <div class="card">
+      <div class="card-title">Top Distractor Sites</div>
+      <div id="sites-content">
+        <div class="skeleton skeleton-line" style="width:80%"></div>
+        <div class="skeleton skeleton-line" style="width:60%"></div>
+        <div class="skeleton skeleton-line" style="width:70%"></div>
+        <div class="skeleton skeleton-line" style="width:50%"></div>
+      </div>
+    </div>
+
+    <!-- 7. Distraction Analysis (async) -->
+    <div class="card">
+      <div class="card-title">Distraction Patterns</div>
+      <div id="distraction-content">
+        <div class="skeleton skeleton-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'https://epoch-api-kyl.azurewebsites.net';
+
+    const COLOR_HEX = { red: '#595A96', green: '#A4A5C7', yellow: '#D2C8E3', gray: '#B5A0CE' };
+    const COLOR_LABELS = { red: 'Distractions', green: 'On-Task', yellow: 'Utility', gray: 'Unclassified' };
+    const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    function formatMs(ms) {
+      const s = Math.floor(ms / 1000);
+      const m = Math.floor(s / 60);
+      const h = Math.floor(m / 60);
+      if (h > 0) return `${h}h ${m % 60}m`;
+      if (m > 0) return `${m}m`;
+      return `${s}s`;
+    }
+
+    function focusScore(s) {
+      const green = s.categorySummary?.green || 0;
+      const red = s.categorySummary?.red || 0;
+      if (green + red === 0) return 0;
+      return Math.round((green / (green + red)) * 100);
+    }
+
+    function scoreColor(score) {
+      if (score >= 70) return '#A4A5C7';  // green
+      if (score >= 40) return '#D2C8E3';  // yellow
+      return '#595A96';                    // red
+    }
+
+    // ── Vertical bar chart renderer ──────────────────────────────────────────
+    function renderVChart(chartEl, axisEl, items) {
+      // items: [{ value: number (0-100), label: string, title: string }]
+      const max = Math.max(...items.map(i => i.value), 1);
+      chartEl.innerHTML = '';
+      axisEl.innerHTML = '';
+      for (const item of items) {
+        const heightPct = (item.value / max) * 100;
+        const wrap = document.createElement('div');
+        wrap.className = 'vbar-wrap';
+
+        const bar = document.createElement('div');
+        bar.className = 'vbar';
+        bar.style.cssText = `height:${heightPct}%;background:${item.color || '#595A96'};`;
+        if (item.title) bar.title = item.title;
+
+        wrap.appendChild(bar);
+        chartEl.appendChild(wrap);
+
+        const lbl = document.createElement('div');
+        lbl.className = 'vbar-label';
+        lbl.textContent = item.label;
+        axisEl.appendChild(Object.assign(document.createElement('div'), {
+          className: 'vbar-wrap',
+          innerHTML: `<span class="vbar-label">${item.label}</span>`
+        }));
+      }
+    }
+
+    // ── Phase 1: load from session index ────────────────────────────────────
+    async function loadPhase1(deviceId) {
+      const res = await fetch(`${API_BASE}/api/sessions?deviceId=${encodeURIComponent(deviceId)}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const sessions = await res.json();
+      if (!sessions.length) throw new Error('no-sessions');
+      return sessions;
+    }
+
+    function renderPhase1(sessions) {
+      // 1. Overview stats
+      let totalMs = 0, totalGreen = 0, totalRed = 0;
+      const scores = [];
+      for (const s of sessions) {
+        totalMs += s.totalMs || 0;
+        totalGreen += s.categorySummary?.green || 0;
+        totalRed += s.categorySummary?.red || 0;
+        scores.push(focusScore(s));
+      }
+      const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+
+      document.getElementById('stat-sessions').textContent = sessions.length;
+      document.getElementById('stat-focus').textContent = formatMs(totalGreen);
+      document.getElementById('stat-avg').textContent = formatMs(Math.round(totalMs / sessions.length));
+      document.getElementById('stat-score').textContent = avgScore + '%';
+      document.getElementById('stat-distraction').textContent = formatMs(totalRed);
+
+      // 2. Focus score trend (last 30 sessions, newest rightmost → reverse for display)
+      const trendSessions = [...sessions].reverse().slice(-30);
+      const trendEl = document.getElementById('trend-chart');
+      const trendAxisEl = document.getElementById('trend-axis');
+      trendEl.innerHTML = '';
+      trendAxisEl.innerHTML = '';
+      for (const s of trendSessions) {
+        const score = focusScore(s);
+        const heightPct = Math.max(score, 3);
+        const date = new Date(s.sessionStart).toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+        const wrap = document.createElement('div');
+        wrap.className = 'vbar-wrap';
+        const bar = document.createElement('div');
+        bar.className = 'vbar';
+        bar.style.cssText = `height:${heightPct}%;background:${scoreColor(score)};`;
+        bar.title = `${date} — ${score}% focus`;
+        wrap.appendChild(bar);
+        trendEl.appendChild(wrap);
+
+        const axisWrap = document.createElement('div');
+        axisWrap.className = 'vbar-wrap';
+        axisWrap.innerHTML = `<span class="vbar-label">${date.split(' ')[1]}</span>`;
+        trendAxisEl.appendChild(axisWrap);
+      }
+
+      // 3. Category breakdown bar
+      const aggCategory = { red: 0, green: 0, yellow: 0, gray: 0 };
+      for (const s of sessions) {
+        for (const [k, v] of Object.entries(s.categorySummary || {})) {
+          aggCategory[k] = (aggCategory[k] || 0) + v;
+        }
+      }
+      const bar = document.getElementById('category-bar');
+      const legend = document.getElementById('category-legend');
+      bar.innerHTML = '';
+      legend.innerHTML = '';
+      for (const [color, label] of Object.entries(COLOR_LABELS)) {
+        const ms = aggCategory[color] || 0;
+        if (!ms) continue;
+        const pct = (ms / (totalMs || 1) * 100).toFixed(1);
+        const seg = document.createElement('div');
+        seg.className = 'bar-segment';
+        seg.style.cssText = `width:${pct}%;background:${COLOR_HEX[color]};`;
+        bar.appendChild(seg);
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `<div class="legend-dot" style="background:${COLOR_HEX[color]}"></div>${label}: ${formatMs(ms)} (${pct}%)`;
+        legend.appendChild(item);
+      }
+
+      // 4. Best time of day
+      const hourBuckets = {}; // hour → [scores]
+      for (const s of sessions) {
+        const hour = new Date(s.sessionStart).getHours();
+        if (!hourBuckets[hour]) hourBuckets[hour] = [];
+        hourBuckets[hour].push(focusScore(s));
+      }
+      const hours = Object.keys(hourBuckets).map(Number).sort((a, b) => a - b);
+      const hourChartEl = document.getElementById('hour-chart');
+      const hourAxisEl = document.getElementById('hour-axis');
+      hourChartEl.innerHTML = '';
+      hourAxisEl.innerHTML = '';
+
+      let bestHour = -1, bestHourScore = -1;
+      const hourItems = hours.map(h => {
+        const avg = Math.round(hourBuckets[h].reduce((a, b) => a + b, 0) / hourBuckets[h].length);
+        if (avg > bestHourScore) { bestHourScore = avg; bestHour = h; }
+        const label = h === 0 ? '12a' : h < 12 ? `${h}a` : h === 12 ? '12p' : `${h - 12}p`;
+        return { value: avg, label, color: scoreColor(avg), title: `${label} — avg ${avg}% focus (${hourBuckets[h].length} sessions)` };
+      });
+      const maxHour = Math.max(...hourItems.map(i => i.value), 1);
+      for (const item of hourItems) {
+        const heightPct = (item.value / maxHour) * 100;
+        const wrap = document.createElement('div');
+        wrap.className = 'vbar-wrap';
+        const bar = document.createElement('div');
+        bar.className = 'vbar';
+        bar.style.cssText = `height:${Math.max(heightPct, 3)}%;background:${item.color};`;
+        bar.title = item.title;
+        wrap.appendChild(bar);
+        hourChartEl.appendChild(wrap);
+
+        const axisWrap = document.createElement('div');
+        axisWrap.className = 'vbar-wrap';
+        axisWrap.innerHTML = `<span class="vbar-label">${item.label}</span>`;
+        hourAxisEl.appendChild(axisWrap);
+      }
+      if (bestHour >= 0) {
+        const label = bestHour === 0 ? '12am' : bestHour < 12 ? `${bestHour}am` : bestHour === 12 ? '12pm' : `${bestHour - 12}pm`;
+        document.getElementById('hour-insight').innerHTML =
+          `<span class="insight-chip">Best: ${label} (${bestHourScore}%)</span>`;
+      }
+
+      // 5. Day of week
+      const dowBuckets = {};
+      for (const s of sessions) {
+        const d = new Date(s.sessionStart).getDay();
+        if (!dowBuckets[d]) dowBuckets[d] = [];
+        dowBuckets[d].push(focusScore(s));
+      }
+      const dowChartEl = document.getElementById('dow-chart');
+      const dowAxisEl = document.getElementById('dow-axis');
+      dowChartEl.innerHTML = '';
+      dowAxisEl.innerHTML = '';
+
+      let bestDow = -1, bestDowScore = -1;
+      const dowAvgs = DOW_LABELS.map((lbl, d) => {
+        const avg = dowBuckets[d]
+          ? Math.round(dowBuckets[d].reduce((a, b) => a + b, 0) / dowBuckets[d].length)
+          : 0;
+        if (avg > bestDowScore) { bestDowScore = avg; bestDow = d; }
+        return { value: avg, label: lbl, color: scoreColor(avg), title: `${lbl} — avg ${avg}% focus` };
+      });
+      const maxDow = Math.max(...dowAvgs.map(i => i.value), 1);
+      for (const item of dowAvgs) {
+        const heightPct = (item.value / maxDow) * 100;
+        const wrap = document.createElement('div');
+        wrap.className = 'vbar-wrap';
+        const bar = document.createElement('div');
+        bar.className = 'vbar';
+        bar.style.cssText = `height:${item.value > 0 ? Math.max(heightPct, 3) : 0}%;background:${item.color};opacity:${item.value > 0 ? 1 : 0.2};`;
+        bar.title = item.title;
+        wrap.appendChild(bar);
+        dowChartEl.appendChild(wrap);
+
+        const axisWrap = document.createElement('div');
+        axisWrap.className = 'vbar-wrap';
+        axisWrap.innerHTML = `<span class="vbar-label">${item.label}</span>`;
+        dowAxisEl.appendChild(axisWrap);
+      }
+      if (bestDow >= 0 && bestDowScore > 0) {
+        document.getElementById('dow-insight').innerHTML =
+          `<span class="insight-chip">Best: ${DOW_LABELS[bestDow]} (${bestDowScore}%)</span>`;
+      }
+    }
+
+    // ── Phase 2: load full sessions for domain + distraction analytics ───────
+    async function loadPhase2(deviceId, sessions) {
+      const toFetch = sessions.slice(0, 20); // most recent 20
+
+      const fullSessions = (await Promise.allSettled(
+        toFetch.map(s =>
+          fetch(`${API_BASE}/api/sessions/${encodeURIComponent(deviceId)}/${s.id}`)
+            .then(r => r.ok ? r.json() : null)
+        )
+      )).map(r => r.status === 'fulfilled' ? r.value : null).filter(Boolean);
+
+      renderTopSites(fullSessions);
+      renderDistractionAnalysis(fullSessions);
+    }
+
+    function renderTopSites(fullSessions) {
+      const domainMap = {};
+      for (const s of fullSessions) {
+        for (const d of s.perDomain || []) {
+          if (d.color !== 'red') continue;
+          domainMap[d.domain] = (domainMap[d.domain] || 0) + d.totalMs;
+        }
+      }
+
+      const sorted = Object.entries(domainMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+
+      const el = document.getElementById('sites-content');
+      if (!sorted.length) {
+        el.innerHTML = '<div class="no-data">No distractor sites recorded.</div>';
+        return;
+      }
+
+      const maxMs = sorted[0][1];
+      el.innerHTML = '';
+      for (const [domain, ms] of sorted) {
+        const pct = (ms / maxMs * 100).toFixed(0);
+        const row = document.createElement('div');
+        row.className = 'domain-row';
+        row.innerHTML = `
+          <div class="domain-name">
+            <div class="domain-dot" style="background:${COLOR_HEX.red}"></div>
+            <span title="${domain}">${domain}</span>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-fill" style="width:${pct}%;background:${COLOR_HEX.red}"></div>
+          </div>
+          <div class="domain-time">${formatMs(ms)}</div>`;
+        el.appendChild(row);
+      }
+    }
+
+    function renderDistractionAnalysis(fullSessions) {
+      let totalDistractions = 0;
+      const timingCounts = { early: 0, mid: 0, late: 0 };
+
+      for (const s of fullSessions) {
+        const segs = s.segments || [];
+        const duration = (s.sessionEnd || s.sessionStart) - s.sessionStart;
+        if (duration <= 0) continue;
+
+        for (let i = 1; i < segs.length; i++) {
+          if (segs[i].color === 'red' && segs[i - 1].color !== 'red') {
+            totalDistractions++;
+            const relPos = (segs[i].start - s.sessionStart) / duration;
+            if (relPos < 0.33) timingCounts.early++;
+            else if (relPos < 0.67) timingCounts.mid++;
+            else timingCounts.late++;
+          }
+        }
+      }
+
+      const avgDistractions = fullSessions.length
+        ? (totalDistractions / fullSessions.length).toFixed(1)
+        : 0;
+
+      const el = document.getElementById('distraction-content');
+      const totalTiming = timingCounts.early + timingCounts.mid + timingCounts.late || 1;
+
+      const timingBars = [
+        { label: 'Early', count: timingCounts.early, desc: 'First third of session' },
+        { label: 'Middle', count: timingCounts.mid, desc: 'Middle third' },
+        { label: 'Late', count: timingCounts.late, desc: 'Final third' }
+      ];
+      const maxTiming = Math.max(...timingBars.map(t => t.count), 1);
+
+      el.innerHTML = `
+        <div style="display:flex;gap:24px;margin-bottom:16px;">
+          <div class="stat-item">
+            <span class="stat-label">Avg distractions / session</span>
+            <span class="stat-value">${avgDistractions}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Total distractions tracked</span>
+            <span class="stat-value">${totalDistractions}</span>
+          </div>
+        </div>
+        <div class="card-title" style="margin-bottom:10px;">When in your session</div>
+        ${timingBars.map(t => `
+          <div class="timing-row">
+            <span class="timing-label">${t.label}</span>
+            <div class="bar-wrap">
+              <div class="bar-fill" style="width:${(t.count / maxTiming * 100).toFixed(0)}%;background:${COLOR_HEX.red}"></div>
+            </div>
+            <span class="timing-time">${t.count}</span>
+          </div>`).join('')}`;
+
+      // Add insight chip
+      const maxBucket = timingBars.reduce((a, b) => b.count > a.count ? b : a, timingBars[0]);
+      if (totalTiming > 1) {
+        const chip = document.createElement('span');
+        chip.className = 'insight-chip';
+        chip.style.marginTop = '12px';
+        chip.textContent = `Most distractions happen ${maxBucket.label.toLowerCase()} in sessions`;
+        el.appendChild(chip);
+      }
+    }
+
+    // ── Main ─────────────────────────────────────────────────────────────────
+    async function load() {
+      const params = new URLSearchParams(location.search);
+      const deviceId = params.get('deviceId');
+
+      if (deviceId) {
+        document.getElementById('back-link').href = `overview.html?deviceId=${encodeURIComponent(deviceId)}`;
+      } else {
+        ['sites-content', 'distraction-content'].forEach(id => {
+          document.getElementById(id).innerHTML = '<div class="error">No device ID in URL. Open this page from the extension.</div>';
+        });
+        return;
+      }
+
+      let sessions;
+      try {
+        sessions = await loadPhase1(deviceId);
+      } catch (err) {
+        if (err.message === 'no-sessions') {
+          document.querySelector('.container').innerHTML += '<div class="card"><div class="no-data">No sessions yet. Lock in to start tracking.</div></div>';
+        }
+        ['sites-content', 'distraction-content'].forEach(id => {
+          document.getElementById(id).innerHTML = `<div class="error">${err.message === 'no-sessions' ? 'No data yet.' : 'Could not load: ' + err.message}</div>`;
+        });
+        return;
+      }
+
+      renderPhase1(sessions);
+
+      // Phase 2 runs in background — skeletons shown until it resolves
+      loadPhase2(deviceId, sessions).catch(() => {
+        document.getElementById('sites-content').innerHTML = '<div class="no-data">Could not load site data.</div>';
+        document.getElementById('distraction-content').innerHTML = '<div class="no-data">Could not load distraction data.</div>';
+      });
+    }
+
+    load();
+  </script>
+</body>
+</html>

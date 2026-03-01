@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Session History — stepdue</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #EFEFF8;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    .container { max-width: 680px; margin: 0 auto; }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .wordmark { font-size: 20px; font-weight: 700; color: #595A96; letter-spacing: -0.5px; }
+    .subtitle { font-size: 13px; color: #B5A0CE; }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid rgba(89, 90, 150, 0.12);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #B5A0CE;
+      margin-bottom: 12px;
+    }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .stat-item { display: flex; flex-direction: column; gap: 2px; }
+    .stat-label { font-size: 11px; color: #B5A0CE; }
+    .stat-value { font-size: 20px; font-weight: 700; color: #595A96; }
+
+    .category-bar {
+      display: flex;
+      height: 10px;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .bar-segment { height: 100%; }
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    .session-row {
+      display: grid;
+      grid-template-columns: 1fr 80px 100px 36px;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(89, 90, 150, 0.08);
+      text-decoration: none;
+      color: inherit;
+    }
+    .session-row:last-child { border-bottom: none; }
+    .session-row:hover .session-date { color: #595A96; }
+
+    .session-date { font-size: 13px; font-weight: 600; }
+    .session-time { font-size: 11px; color: #B5A0CE; margin-top: 2px; }
+    .session-duration { font-size: 13px; color: #595A96; font-weight: 600; }
+
+    .mini-bar { display: flex; height: 6px; border-radius: 4px; overflow: hidden; }
+    .mini-seg { height: 100%; }
+
+    .session-arrow { font-size: 16px; color: #B5A0CE; text-align: right; }
+
+    .no-data { color: #B5A0CE; font-size: 13px; text-align: center; padding: 20px 0; }
+    .error { color: #c0392b; font-size: 13px; text-align: center; padding: 20px 0; }
+
+    .insights-btn {
+      font-size: 12px;
+      font-weight: 600;
+      color: #595A96;
+      text-decoration: none;
+      background: rgba(89, 90, 150, 0.1);
+      border-radius: 20px;
+      padding: 4px 12px;
+    }
+    .insights-btn:hover { background: rgba(89, 90, 150, 0.18); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="wordmark">stepdue</span>
+      <a id="insights-link" class="insights-btn" href="analytics.html">Insights →</a>
+    </header>
+
+    <div class="card">
+      <div class="card-title">All Time</div>
+      <div class="stat-grid">
+        <div class="stat-item">
+          <span class="stat-label">Sessions</span>
+          <span class="stat-value" id="stat-sessions">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Total Time</span>
+          <span class="stat-value" id="stat-total">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Avg Session</span>
+          <span class="stat-value" id="stat-avg">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Time Distribution</div>
+      <div class="category-bar" id="category-bar"></div>
+      <div class="legend" id="category-legend"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sessions</div>
+      <div id="session-list"><div class="no-data">Loading…</div></div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Config ───────────────────────────────────────────────────────────────
+    // Update this after deploying your Azure Function App
+    const API_BASE = 'https://epoch-api-kyl.azurewebsites.net';
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const COLOR_HEX = { red: '#595A96', green: '#A4A5C7', yellow: '#D2C8E3', gray: '#B5A0CE' };
+    const COLOR_LABELS = { red: 'Distractions', green: 'On-Task', yellow: 'Utility', gray: 'Unclassified' };
+
+    function formatMs(ms) {
+      const s = Math.floor(ms / 1000);
+      const m = Math.floor(s / 60);
+      const h = Math.floor(m / 60);
+      if (h > 0) return `${h}h ${m % 60}m`;
+      if (m > 0) return `${m}m`;
+      return `${s}s`;
+    }
+
+    function formatDate(ms) {
+      return new Date(ms).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    function formatTime(ms) {
+      return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    async function load() {
+      const params = new URLSearchParams(location.search);
+      const deviceId = params.get('deviceId');
+
+      if (!deviceId) {
+        document.getElementById('session-list').innerHTML = '<div class="error">No device ID in URL. Open this page from the extension.</div>';
+        return;
+      }
+
+      document.getElementById('insights-link').href = `analytics.html?deviceId=${encodeURIComponent(deviceId)}`;
+
+      let sessions;
+      try {
+        const res = await fetch(`${API_BASE}/api/sessions?deviceId=${encodeURIComponent(deviceId)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        sessions = await res.json();
+      } catch (err) {
+        document.getElementById('session-list').innerHTML = `<div class="error">Could not load sessions: ${err.message}</div>`;
+        return;
+      }
+
+      if (!sessions.length) {
+        document.getElementById('session-list').innerHTML = '<div class="no-data">No sessions yet. Lock in to start tracking.</div>';
+        return;
+      }
+
+      // Aggregate totals
+      let totalMs = 0;
+      const aggCategory = { red: 0, green: 0, yellow: 0, gray: 0 };
+      for (const s of sessions) {
+        totalMs += s.totalMs || 0;
+        for (const [k, v] of Object.entries(s.categorySummary || {})) {
+          aggCategory[k] = (aggCategory[k] || 0) + v;
+        }
+      }
+
+      document.getElementById('stat-sessions').textContent = sessions.length;
+      document.getElementById('stat-total').textContent = formatMs(totalMs);
+      document.getElementById('stat-avg').textContent = formatMs(Math.round(totalMs / sessions.length));
+
+      // Category bar
+      const bar = document.getElementById('category-bar');
+      const legend = document.getElementById('category-legend');
+      bar.innerHTML = '';
+      legend.innerHTML = '';
+      const aggTotal = totalMs || 1;
+      for (const [color, label] of Object.entries(COLOR_LABELS)) {
+        const ms = aggCategory[color] || 0;
+        if (ms === 0) continue;
+        const pct = (ms / aggTotal * 100).toFixed(1);
+        const seg = document.createElement('div');
+        seg.className = 'bar-segment';
+        seg.style.cssText = `width:${pct}%;background:${COLOR_HEX[color]};`;
+        bar.appendChild(seg);
+
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `<div class="legend-dot" style="background:${COLOR_HEX[color]}"></div>${label}: ${formatMs(ms)} (${pct}%)`;
+        legend.appendChild(item);
+      }
+
+      // Session list
+      const list = document.getElementById('session-list');
+      list.innerHTML = '';
+      for (const s of sessions) {
+        const link = document.createElement('a');
+        link.className = 'session-row';
+        link.href = `session.html?id=${s.id}&deviceId=${encodeURIComponent(deviceId)}`;
+
+        const sTotal = s.totalMs || 1;
+        const miniSegs = Object.entries(COLOR_HEX).map(([color, hex]) => {
+          const ms = s.categorySummary?.[color] || 0;
+          if (ms === 0) return '';
+          const pct = (ms / sTotal * 100).toFixed(0);
+          return `<div class="mini-seg" style="width:${pct}%;background:${hex}"></div>`;
+        }).join('');
+
+        link.innerHTML = `
+          <div>
+            <div class="session-date">${formatDate(s.sessionStart)}</div>
+            <div class="session-time">${formatTime(s.sessionStart)}</div>
+          </div>
+          <div class="session-duration">${formatMs(s.totalMs || 0)}</div>
+          <div class="mini-bar">${miniSegs}</div>
+          <div class="session-arrow">›</div>`;
+
+        list.appendChild(link);
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

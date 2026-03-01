@@ -33,7 +33,9 @@
     const segs = localSegments;
     if (!segs || segs.length === 0) return null;
 
-    const result = [];
+    // First pass: compute flex values for all segments
+    const items = [];
+    let totalFlex = 0;
     for (const seg of segs) {
       const end = seg.end || now;
       const duration = end - seg.start;
@@ -43,9 +45,31 @@
       const ageSeconds = (now - midpoint) / 1000;
       const weight = fisheye(ageSeconds);
       const flex = duration * weight;
-      const blend = Math.max(0, Math.min(1, weight));
+      totalFlex += flex;
+      items.push({ color: seg.color, flex, weight });
+    }
 
-      result.push({ color: seg.color, flex, blend });
+    if (totalFlex === 0) return null;
+
+    // Second pass: compute blend based on right-edge position
+    // Segments only start fading once their right edge is past 50%
+    const result = [];
+    let cumFlex = 0;
+    for (const item of items) {
+      cumFlex += item.flex;
+      const rightEdge = cumFlex / totalFlex; // 0..1 position from left
+
+      let blend;
+      if (rightEdge > 0.5) {
+        // Right edge is in the recent half — full color
+        blend = 1;
+      } else {
+        // Right edge is in the older half — fade based on how far past 50%
+        // At 50% → blend=1, at 0% → blend approaches 0
+        blend = Math.max(0.15, rightEdge / 0.5);
+      }
+
+      result.push({ color: item.color, flex: item.flex, blend });
     }
 
     return { segments: result };

@@ -1,0 +1,18 @@
+{
+  "green": [
+    "tutorial", "lecture", "explained", "how to", "learn", "course",
+    "university", "professor", "calculus", "chemistry", "biology",
+    "history of", "programming", "algorithm", "math", "physics",
+    "documentation", "lesson", "study guide", "textbook", "science",
+    "engineering", "medicine", "anatomy", "economics", "linguistics",
+    "machine learning", "data science", "research", "analysis",
+    "introduction to", "overview of", "mit ", "stanford ", "harvard ",
+    "crash course", "full course", "complete guide"
+  ],
+  "red": [
+    "gaming", "funny", "fails", "reaction", "vlog", "challenge",
+    "meme", "prank", "compilation", "minecraft", "fortnite",
+    "stream highlights", "unboxing", "roast", "best moments",
+    "highlights reel", "entertainment", "let's play", "gameplay"
+  ]
+}

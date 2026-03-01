@@ -9,20 +9,27 @@
 <body>
   <header>
     <span class="wordmark">stepdue</span>
-    <span class="version">v0.2</span>
+    <span class="version" id="version-badge">v0.2</span>
   </header>
 
-  <nav class="tab-nav">
-    <button class="tab-btn active" data-tab="session">Session</button>
-    <button class="tab-btn" data-tab="sites">Sites</button>
-    <button class="tab-btn" data-tab="analytics">Analytics</button>
+  <nav class="tab-nav" role="tablist">
+    <button class="tab-btn active" data-tab="session" role="tab" aria-selected="true" aria-controls="tab-session" id="tabbutton-session">Session</button>
+    <button class="tab-btn" data-tab="sites" role="tab" aria-selected="false" aria-controls="tab-sites" id="tabbutton-sites">Sites</button>
+    <button class="tab-btn" data-tab="analytics" role="tab" aria-selected="false" aria-controls="tab-analytics" id="tabbutton-analytics">Analytics</button>
   </nav>
 
   <!-- Tab 1: Session -->
-  <div class="tab-panel active" id="tab-session">
+  <div class="tab-panel active" id="tab-session" role="tabpanel" aria-labelledby="tabbutton-session">
     <div class="session-panel">
       <button id="lock-btn" class="lock-btn">Lock In</button>
-      <p class="status" id="status-text">Not in session</p>
+      <p class="status" id="status-text" aria-live="polite">Not in session</p>
+    </div>
+    <div id="report-links" class="report-links" style="display:none">
+      <button id="view-report-btn" class="report-link-btn">View Session Report</button>
+      <button id="view-all-btn" class="report-link-btn secondary">All Sessions</button>
+    </div>
+    <div class="report-links" style="margin-top:4px">
+      <button id="view-insights-btn" class="report-link-btn secondary">Insights</button>
     </div>
     <div class="section-header-sm">
       <span class="section-title-sm">Time per site</span>
@@ -33,55 +40,35 @@
   </div>
 
   <!-- Tab 2: Sites -->
-  <div class="tab-panel" id="tab-sites">
-    <div class="current-domain-strip">
+  <div class="tab-panel" id="tab-sites" role="tabpanel" aria-labelledby="tabbutton-sites">
+    <div class="current-domain-strip" id="current-domain-strip">
+      <span class="drag-handle" aria-hidden="true">⠿</span>
       <div class="current-domain-dot" id="current-domain-dot"></div>
       <span class="current-domain-label" id="current-domain-label">No active tab</span>
     </div>
 
-    <div class="domain-category" id="category-red">
-      <div class="category-header" data-category="red">
-        <div class="color-dot red"></div>
-        <span class="category-name">Distractions</span>
-        <span class="domain-count" id="count-red">0</span>
-        <span class="chevron">▾</span>
-      </div>
-      <div class="domain-list" id="list-red"></div>
-    </div>
+    <div id="categories-container"></div>
 
-    <div class="domain-category" id="category-green">
-      <div class="category-header" data-category="green">
-        <div class="color-dot green"></div>
-        <span class="category-name">On-Task</span>
-        <span class="domain-count" id="count-green">0</span>
-        <span class="chevron">▾</span>
-      </div>
-      <div class="domain-list" id="list-green"></div>
-    </div>
-
-    <div class="domain-category" id="category-yellow">
-      <div class="category-header" data-category="yellow">
-        <div class="color-dot yellow"></div>
-        <span class="category-name">Utility</span>
-        <span class="domain-count" id="count-yellow">0</span>
-        <span class="chevron">▾</span>
-      </div>
-      <div class="domain-list" id="list-yellow"></div>
+    <div class="site-actions">
+      <button id="add-category-btn" class="add-category-btn">+ Add category</button>
+      <button id="modify-list-btn" class="modify-list-btn">Modify list</button>
     </div>
 
     <div class="add-domain">
+      <label for="domain-input" class="sr-only">Domain</label>
       <input type="text" id="domain-input" placeholder="domain.com">
+      <label for="color-select" class="sr-only">Category</label>
       <select id="color-select">
         <option value="red">Distraction</option>
         <option value="green">On-Task</option>
         <option value="yellow">Utility</option>
       </select>
-      <button id="add-btn">+</button>
+      <button id="add-btn" aria-label="Add domain">+</button>
     </div>
   </div>
 
   <!-- Tab 3: Analytics -->
-  <div class="tab-panel" id="tab-analytics">
+  <div class="tab-panel" id="tab-analytics" role="tabpanel" aria-labelledby="tabbutton-analytics">
     <div class="analytics-strip">
       <div class="strip-item">
         <span class="strip-label">Started</span>
@@ -100,6 +87,43 @@
       <div class="no-data">No activity yet.</div>
     </div>
   </div>
+
+  <!-- Category modal (add / edit) -->
+  <div class="modal-overlay" id="category-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <span id="modal-title">New Category</span>
+        <button class="modal-close" id="modal-close" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="category-name-input" placeholder="Category name" maxlength="24" autocomplete="off">
+        <p class="color-grid-label">Choose a color</p>
+        <div class="color-grid" id="color-grid"></div>
+        <div class="color-preview">
+          <div class="color-preview-swatch" id="selected-color-swatch"></div>
+          <span class="color-preview-hex" id="selected-color-hex">#595A96</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="modal-delete" class="modal-delete-btn" hidden>Delete category</button>
+        <div class="modal-actions">
+          <button id="modal-cancel" class="modal-cancel-btn">Cancel</button>
+          <button id="modal-confirm" class="modal-confirm-btn">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Theme Toggle Bar -->
+  <div class="theme-bar">
+    <div class="theme-pill">
+      <div class="theme-pill-slider" id="theme-slider"></div>
+      <button class="theme-btn active" data-mode="light" id="theme-light" aria-label="Light mode">☀ Light</button>
+      <button class="theme-btn" data-mode="dark" id="theme-dark" aria-label="Dark mode">☾ Dark</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="assertive"></div>
 
   <script src="popup.js"></script>
 </body>

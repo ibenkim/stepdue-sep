@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Session Report — stepdue</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #EFEFF8;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    .container { max-width: 680px; margin: 0 auto; }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .wordmark { font-size: 20px; font-weight: 700; color: #595A96; letter-spacing: -0.5px; }
+    .back-link { font-size: 13px; color: #595A96; text-decoration: none; }
+    .back-link:hover { text-decoration: underline; }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid rgba(89, 90, 150, 0.12);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #B5A0CE;
+      margin-bottom: 12px;
+    }
+
+    .meta-strip { display: flex; gap: 32px; }
+    .meta-item { display: flex; flex-direction: column; gap: 2px; }
+    .meta-label { font-size: 11px; color: #B5A0CE; }
+    .meta-value { font-size: 18px; font-weight: 600; color: #595A96; }
+
+    .category-bar {
+      display: flex;
+      height: 10px;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .bar-segment { height: 100%; transition: width 0.4s ease; }
+
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    .domain-row {
+      display: grid;
+      grid-template-columns: 1fr 120px 60px;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(89, 90, 150, 0.08);
+    }
+    .domain-row:last-child { border-bottom: none; }
+
+    .domain-name { font-size: 13px; display: flex; align-items: center; gap: 8px; overflow: hidden; }
+    .domain-name span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .domain-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    .bar-wrap { background: rgba(89, 90, 150, 0.08); border-radius: 4px; height: 6px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; }
+
+    .domain-time { font-size: 12px; color: #777; text-align: right; }
+
+    .timeline-entry {
+      display: grid;
+      grid-template-columns: 64px 10px 1fr 52px;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(89, 90, 150, 0.06);
+      font-size: 12px;
+    }
+    .timeline-entry:last-child { border-bottom: none; }
+
+    .tl-ts { color: #B5A0CE; font-variant-numeric: tabular-nums; }
+    .tl-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .tl-domain { color: #1a1a1a; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .tl-dur { color: #777; text-align: right; }
+
+    .no-data { color: #B5A0CE; font-size: 13px; text-align: center; padding: 20px 0; }
+    .error { color: #c0392b; font-size: 13px; text-align: center; padding: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="wordmark">stepdue</span>
+      <a class="back-link" id="overview-link" href="overview.html">All Sessions</a>
+    </header>
+
+    <div class="card" id="meta-card">
+      <div class="card-title">Session</div>
+      <div class="meta-strip">
+        <div class="meta-item">
+          <span class="meta-label">Date</span>
+          <span class="meta-value" id="meta-date">—</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Started</span>
+          <span class="meta-value" id="meta-start">—</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Duration</span>
+          <span class="meta-value" id="meta-duration">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Time Breakdown</div>
+      <div class="category-bar" id="category-bar"></div>
+      <div class="legend" id="category-legend"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sites</div>
+      <div id="domain-list"><div class="no-data">Loading…</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Activity Timeline</div>
+      <div id="timeline"><div class="no-data">Loading…</div></div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Config ───────────────────────────────────────────────────────────────
+    // Update this after deploying your Azure Function App
+    const API_BASE = 'https://epoch-api-kyl.azurewebsites.net';
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const COLOR_HEX = { red: '#595A96', green: '#A4A5C7', yellow: '#D2C8E3', gray: '#B5A0CE' };
+    const COLOR_LABELS = { red: 'Distractions', green: 'On-Task', yellow: 'Utility', gray: 'Unclassified' };
+
+    function formatMs(ms) {
+      const s = Math.floor(ms / 1000);
+      const m = Math.floor(s / 60);
+      const h = Math.floor(m / 60);
+      if (h > 0) return `${h}h ${m % 60}m`;
+      if (m > 0) return `${m}m ${s % 60}s`;
+      return `${s}s`;
+    }
+
+    function formatTime(ms) {
+      return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    }
+
+    function formatDate(ms) {
+      return new Date(ms).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    async function load() {
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+      const deviceId = params.get('deviceId');
+
+      if (!id) {
+        document.getElementById('domain-list').innerHTML = '<div class="error">No session ID in URL.</div>';
+        return;
+      }
+
+      // Pass deviceId to overview link
+      if (deviceId) {
+        document.getElementById('overview-link').href = `overview.html?deviceId=${deviceId}`;
+      }
+
+      if (!deviceId) {
+        document.getElementById('domain-list').innerHTML = '<div class="error">Missing deviceId in URL.</div>';
+        return;
+      }
+
+      let data;
+      try {
+        const res = await fetch(`${API_BASE}/api/sessions/${encodeURIComponent(deviceId)}/${id}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        data = await res.json();
+      } catch (err) {
+        document.getElementById('domain-list').innerHTML = `<div class="error">Could not load session: ${err.message}</div>`;
+        return;
+      }
+
+      // Meta
+      document.getElementById('meta-date').textContent = formatDate(data.sessionStart);
+      document.getElementById('meta-start').textContent = formatTime(data.sessionStart);
+      document.getElementById('meta-duration').textContent = formatMs(data.totalMs);
+
+      // Category bar
+      const bar = document.getElementById('category-bar');
+      const legend = document.getElementById('category-legend');
+      bar.innerHTML = '';
+      legend.innerHTML = '';
+      const total = data.totalMs || 1;
+      for (const [color, label] of Object.entries(COLOR_LABELS)) {
+        const ms = data.categorySummary?.[color] || 0;
+        if (ms === 0) continue;
+        const pct = (ms / total * 100).toFixed(1);
+        const seg = document.createElement('div');
+        seg.className = 'bar-segment';
+        seg.style.cssText = `width:${pct}%; background:${COLOR_HEX[color]};`;
+        bar.appendChild(seg);
+
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `<div class="legend-dot" style="background:${COLOR_HEX[color]}"></div>${label}: ${formatMs(ms)} (${pct}%)`;
+        legend.appendChild(item);
+      }
+
+      // Domains
+      const domainList = document.getElementById('domain-list');
+      domainList.innerHTML = '';
+      const maxMs = data.perDomain?.[0]?.totalMs || 1;
+      for (const entry of (data.perDomain || [])) {
+        const pct = (entry.totalMs / maxMs * 100).toFixed(0);
+        const row = document.createElement('div');
+        row.className = 'domain-row';
+        row.innerHTML = `
+          <div class="domain-name">
+            <div class="domain-dot" style="background:${COLOR_HEX[entry.color] || COLOR_HEX.gray}"></div>
+            <span title="${entry.domain}">${entry.domain}</span>
+          </div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${COLOR_HEX[entry.color] || COLOR_HEX.gray}"></div></div>
+          <div class="domain-time">${formatMs(entry.totalMs)}</div>`;
+        domainList.appendChild(row);
+      }
+      if (!data.perDomain?.length) domainList.innerHTML = '<div class="no-data">No domain data.</div>';
+
+      // Timeline
+      const tl = document.getElementById('timeline');
+      tl.innerHTML = '';
+      for (const seg of (data.segments || []).filter(s => s.domain)) {
+        const entry = document.createElement('div');
+        entry.className = 'timeline-entry';
+        entry.innerHTML = `
+          <span class="tl-ts">${formatTime(seg.start)}</span>
+          <div class="tl-dot" style="background:${COLOR_HEX[seg.color] || COLOR_HEX.gray}"></div>
+          <span class="tl-domain" title="${seg.domain}">${seg.domain}</span>
+          <span class="tl-dur">${formatMs(seg.end - seg.start)}</span>`;
+        tl.appendChild(entry);
+      }
+      if (!data.segments?.filter(s => s.domain).length) tl.innerHTML = '<div class="no-data">No timeline data.</div>';
+    }
+
+    load();
+  </script>
+</body>
+</html>

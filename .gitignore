@@ -1,0 +1,22 @@
+# ─── Secrets ─────────────────────────────────────────────────────────────────
+# Azure Functions local config — contains storage account keys
+azure/api/local.settings.json
+
+# ─── Dependencies ─────────────────────────────────────────────────────────────
+node_modules/
+azure/api/node_modules/
+
+# ─── Build / Deploy artifacts ─────────────────────────────────────────────────
+*.zip
+dist/
+build/
+.output/
+
+# ─── OS / Editor ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+*.swp
+*.swo
+
+.env

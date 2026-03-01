@@ -24,19 +24,23 @@ app.http('sessionById', {
   authLevel: 'anonymous',
   route: 'sessions/{deviceId}/{id}',
   handler: async (request) => {
-    const { deviceId, id } = request.params;
-    const blobService = getBlobClient();
-    const container = blobService.getContainerClient('sessions');
-    const blob = container.getBlockBlobClient(`${deviceId}/${id}.json`);
-
     try {
-      const download = await blob.download();
-      const chunks = [];
-      for await (const chunk of download.readableStreamBody) chunks.push(chunk);
-      const text = Buffer.concat(chunks).toString('utf8');
-      return { headers: CORS_HEADERS, jsonBody: JSON.parse(text) };
-    } catch {
-      return { status: 404, headers: CORS_HEADERS, jsonBody: { error: 'Session not found' } };
+      const { deviceId, id } = request.params;
+      const blobService = getBlobClient();
+      const container = blobService.getContainerClient('sessions');
+      const blob = container.getBlockBlobClient(`${deviceId}/${id}.json`);
+
+      try {
+        const download = await blob.download();
+        const chunks = [];
+        for await (const chunk of download.readableStreamBody) chunks.push(chunk);
+        const text = Buffer.concat(chunks).toString('utf8');
+        return { headers: CORS_HEADERS, jsonBody: JSON.parse(text) };
+      } catch {
+        return { status: 404, headers: CORS_HEADERS, jsonBody: { error: 'Session not found' } };
+      }
+    } catch (err) {
+      return { status: 500, headers: CORS_HEADERS, jsonBody: { error: err.message } };
     }
   }
 });
